@@ -1,0 +1,141 @@
+> AMBARI_SERVICE    
+
+        This module will allow you to stop/start/restart services managed by Ambari
+
+OPTIONS (= is mandatory):
+
+= ambari_url
+        The Ambari base URL to access Ambari API. Same host:port as the Ambari Admin GUI. Typically http://myambari.server.com:8080 or
+        https://myambari.server.com:xxxx
+        [Default: None]
+
+- ca_bundle_file
+        Useful if Ambari connection is using SSL. Allow to specify a CA_BUNDLE file, a file that contains root and intermediate certificates to validate
+        the Ambari certificate.
+        In its simplest case, it could be a file containing the server certificate in .pem format.
+        This file will be looked up on the remote system, on which this module will be executed.
+        [Default: None]
+
+- components
+        A list of service component to restart.
+        Valid only when (state == 'restarted') and (service != '_stale_')
+        [Default: All components of the given services]
+
+= password
+        The password associated with the username
+        [Default: None]
+
+- service
+        The service we want to act on. such as 'HDFS', 'KAFKA_BROKER',...
+        Required when (state != 'list')
+        Can take special value '_stale_' to restart all stale services (Typically after a configuration modification)
+        [Default: None]
+
+= state
+        Target state for the provided service
+        `list' is a special case, allowing to retrieve all available services and associated components of the cluster.
+        (Choices: stopped, started, restarted, list)[Default: None]
+
+= username
+        The user name to log on Ambari.
+        [Default: None]
+
+- validate_certs
+        Useful if Ambari connection is using SSL. If no, SSL certificates will not be validated. This should only be used on personally controlled sites
+        using self-signed certificates.
+        [Default: True]
+
+- wait
+        Should the module wait for the operation to be completed.
+        [Default: True]
+        type: bool
+
+
+AUTHOR: Serge ALEXANDRE
+
+EXAMPLES:
+- name: Restart stale services
+    ambari_service:
+      ambari_url: "http://sr1.hdp16:8080"
+      username: admin
+      password: admin
+      service: "_stale_"
+      state: restarted
+    no_log: true
+  
+  - name: Restart HBASE
+    ambari_service:
+      ambari_url: "http://sr1.hdp16:8080"
+      username: admin
+      password: admin
+      service: "HBASE"
+      state: restarted
+    no_log: true
+  
+  - name: Restart some components of HBASE
+    ambari_service:
+      ambari_url: "http://sr1.hdp16:8080"
+      username: admin
+      password: admin
+      service: "HBASE"
+      components:
+      - HBASE_MASTER
+      - HBASE_REGIONSERVER
+      state: restarted
+    no_log: true
+  
+  - name: Stop HBASE service
+    ambari_service:
+      ambari_url: "http://sr1.hdp16:8080"
+      username: admin
+      password: admin
+      service: "HBASE"
+      state: stopped
+    no_log: true
+
+RETURN VALUES:
+
+
+services:
+  description: A dict of all services as key and list of associated components as value
+  returned: When (state == 'list') and success
+  type: dict
+  sample: "services": {
+            "AMBARI_METRICS": {
+                "components": [
+                    "METRICS_COLLECTOR",
+                    "METRICS_GRAFANA",
+                    "METRICS_MONITOR"
+                ]
+            },
+            "HBASE": {
+                "components": [
+                    "HBASE_CLIENT",
+                    "HBASE_MASTER",
+                    "HBASE_REGIONSERVER"
+                ]
+            },
+            "HDFS": {
+                "components": [
+                    "DATANODE",
+                    "HDFS_CLIENT",
+                    "JOURNALNODE",
+                    "NAMENODE",
+                    "ZKFC"
+                ]
+            },q
+            ...
+        }
+
+task:
+  description: The task id of the performed operation.
+  returned: when (state == 'stop' or state == 'start' or (state == 'restarted' and service == '_stale_'))
+  type: string
+  sample: 34
+
+tasks:
+  description: A list of task id of the performed operation.
+  returned: when (state == 'restarted' and service != '_stale_')
+  type: list of string
+  sample: [36, 37, 38]
+

@@ -16,64 +16,10 @@
 # You should have received a copy of the GNU General Public License
 # along with this software. If not, see <http://www.gnu.org/licenses/>.
 
-XDOCUMENTATION = '''
----
-module: ambari_configs
-short_description: Manage service configuration using Ambari REST APO 
-description:
-  - This module will allow you to read, define and modify configurations for Hadoop (or others) services managed by Ambari
-author:
-  - "Serge ALEXANDRE"
-options:
-  ambari_url:
-    description:
-      - The Ranger base URL to access Ranger API. Same host:port as the Ambari Admin GUI. Typically http://myambari.server.com:8080 or https://myambari.server.com:xxxx  
-    required: true
-    default: None
-    aliases: []
-  username:
-    description:
-      - The user name to log on Ambari.
-    required: true
-    default: None
-    aliases: []
-  password:
-    description:
-      - The password associated with the username
-    required: true
-    default: None
-    aliases: []
-  validate_certs:
-    description:
-      - Useful if Ambari connection is using SSL. If no, SSL certificates will not be validated. This should only be used on personally controlled sites using self-signed certificates.
-    required: false
-    default: True
-    aliases: []
-  ca_bundle_file:
-    description:
-      - Useful if Ambari connection is using SSL. Allow to specify a CA_BUNDLE file, a file that contains root and intermediate certificates to validate the Ambari certificate.
-      - In its simplest case, it could be a file containing the server certificate in .pem format.
-      - This file will be looked up on the remote system, on which this module will be executed. 
-    required: false
-    default: None
-    aliases: []
-  operationx:
-    description:
-      - xxxxx
-      - "get: Retrieve current configuration values for type" 
-      - set Set some configuration values for type
-    required: false
-    default: set
-    aliases: []
- 
-
-'''
-
-
 DOCUMENTATION = '''
 ---
 module: ambari_configs
-short_description: Manage service configuration using Ambari REST APO 
+short_description: Manage service configuration using Ambari REST API
 description:
   - This module will allow you to read, define and modify configurations for Hadoop (or others) services managed by Ambari
 author:
@@ -81,7 +27,7 @@ author:
 options:
   ambari_url:
     description:
-      - The Ranger base URL to access Ranger API. Same host:port as the Ambari Admin GUI. Typically http://myambari.server.com:8080 or https://myambari.server.com:xxxx  
+      - The Ambari base URL to access Ambari API. Same host:port as the Ambari Admin GUI. Typically http://myambari.server.com:8080 or https://myambari.server.com:xxxx  
     required: true
     default: None
     aliases: []
@@ -113,30 +59,79 @@ options:
     aliases: []
   operation:
     description:
-      - "'get': Retrieve current configuration values for type" 
-      - "set: Set some configuration values for type"
-      - "list: Retrieve all existing configuration types, with version"
+      - C(get) Retrieve current configuration values for type 
+      - C(set) Set some configuration values for type
+      - C(list) Retrieve all existing configuration types, with version
+    choices:
+    - set
+    - get
+    - list
     required: false
     default: set
     aliases: []
   type:
     description:
       - Configuration type, such as 'kafka-broker', or 'hdfs-site' .
+      - Required when (operation != 'list')
     required: false
     default: None
     aliases: []
   values:
     description:
-      - A map of of configuration values
+      - A map of of configuration values. See examples below
+      - Required when (operation == 'set')
     required: false
     default: None
     aliases: []
 
 '''
 
+RETURN = '''
+types:
+  description: Return a dict of configuration type as key and version as unique value
+  returned: When (operation == 'list') and success
+  type: dict
+  sample:  "types": {
+            "kafka-broker": {
+                "version": 4
+            },
+            "kafka-env": {
+                "version": 2
+            },
+            "kafka-log4j": {
+                "version": 2
+            },
+            "livy-conf": {
+                "version": 2
+            },            
+            ....
+          }
+
+type:
+  description: Return the provided configuration type, for reference
+  returned: When ((operation == 'get') or (operantion == 'set)) and success
+  type: string
+  sample: kafka-broker
+
+config: 
+  description: Return a dict of configuration value for the provided type
+  returned: when (operation == 'get') and success
+  type: dict
+  sample: "config": {
+             "auto.create.topics.enable": "false",
+             "auto.leader.rebalance.enable": "true",
+             "compression.type": "producer",
+             "controlled.shutdown.enable": "true",
+             "controlled.shutdown.max.retries": "3",
+             "controlled.shutdown.retry.backoff.ms": "5000",
+             "controller.message.queue.size": "10",
+             ....
+          }
+'''
+
+
+
 EXAMPLES = '''
-
-
   - name: Set kafka-broker configuration
     ambari_configs:
       ambari_url: "http://sr1.hdp16:8080"
@@ -148,6 +143,31 @@ EXAMPLES = '''
         auto.create.topics.enable: "false"
         log.retention.hours: 220
     no_log: true
+
+  # To display current configuration values for a configuration type
+  - name: Get kafka-broker configuration
+    ambari_configs:
+      ambari_url: "http://sr1.hdp16:8080"
+      username: admin
+      password: admin
+      operation: get
+      type: kafka-broker
+    no_log: true
+    register: kafkaBrokerConfig
+
+  - debug: var=kafkaBrokerConfig
+
+  # To display all available configuration type
+  - name: Get configuration type list (And current versions)
+    ambari_configs:
+      ambari_url: "http://sr1.hdp16:8080"
+      username: admin
+      password: admin
+      operation: list
+    no_log: true
+    register: typeList
+    
+  - debug: var=typeList
 
 # Configuration map can also be a variable
 - hosts: sr1
@@ -164,8 +184,18 @@ EXAMPLES = '''
       operation: set
       type: kafka-broker
       values: "{{ brokerConfig }}"
-    no_log: false  
+    no_log: true  
 
+# Or a plain string (Take care of quotes). 
+  - name: Set kafka-broker configuration
+    ambari_configs:
+      ambari_url: "http://sr1.hdp16:8080"
+      username: admin
+      password: admin
+      operation: set
+      type: kafka-broker
+      values: '{ "log.retention.hours": "220" }'
+    no_log: true
 '''
 
 import json 
@@ -294,7 +324,7 @@ class AmbariConfigApi:
             error("Invalid response on getConfig(). More than one items: {}".format(result))
         return result[ITEMS][0][PROPERTIES], result[ITEMS][0].get(PROPERTIES_ATTRIBUTES, {})
     
-    def changeConfig(self, configType, newProperties):
+    def changeConfig(self, configType, newProperties, checkMode):
         properties, attributes = self.getConfig(configType)
         changed = False
         for key in newProperties:
@@ -308,7 +338,7 @@ class AmbariConfigApi:
                     debug("{}/{}/{}=>{}: Value changed".format(configType, key, properties[key], value))
                 properties[key] = value
                 changed = True
-        if changed:
+        if changed and not checkMode:
             newTag = TAG_PREFIX + str(int(time.time() * 1000000))
             newConfig = {
                 CLUSTERS: {
@@ -387,8 +417,8 @@ def main():
         if not isinstance(p.values, six.string_types):
             p.values = json.dumps(p.values)
         values = json.loads(p.values)
-        changed = api.changeConfig(p.type, values)
-        module.exit_json(changed=changed, logs=logs)
+        changed = api.changeConfig(p.type, values, p.checkMode)
+        module.exit_json(changed=changed, type=p.type, logs=logs)
     else:
         error("Unimplemented operation '{}'".format(p.operation))
 
