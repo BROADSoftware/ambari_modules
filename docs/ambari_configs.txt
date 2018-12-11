@@ -1,0 +1,78 @@
+> AMBARI_CONFIGS    
+
+        This module will allow you to read, define and modify configurations for Hadoop (or others) services managed by Ambari
+
+OPTIONS (= is mandatory):
+
+= ambari_url
+        The Ranger base URL to access Ranger API. Same host:port as the Ambari Admin GUI. Typically http://myambari.server.com:8080 or
+        https://myambari.server.com:xxxx
+        [Default: None]
+
+- ca_bundle_file
+        Useful if Ambari connection is using SSL. Allow to specify a CA_BUNDLE file, a file that contains root and intermediate certificates to validate
+        the Ambari certificate.
+        In its simplest case, it could be a file containing the server certificate in .pem format.
+        This file will be looked up on the remote system, on which this module will be executed.
+        [Default: None]
+
+- operation
+        'get': Retrieve current configuration values for type
+        set: Set some configuration values for type
+        list: Retrieve all existing configuration types, with version
+        [Default: set]
+
+= password
+        The password associated with the username
+        [Default: None]
+
+- type
+        Configuration type, such as 'kafka-broker', or 'hdfs-site' .
+        [Default: None]
+
+= username
+        The user name to log on Ambari.
+        [Default: None]
+
+- validate_certs
+        Useful if Ambari connection is using SSL. If no, SSL certificates will not be validated. This should only be used on personally controlled sites
+        using self-signed certificates.
+        [Default: True]
+
+- values
+        A map of of configuration values
+        [Default: None]
+
+
+AUTHOR: Serge ALEXANDRE
+
+EXAMPLES:
+- name: Set kafka-broker configuration
+    ambari_configs:
+      ambari_url: "http://sr1.hdp16:8080"
+      username: admin
+      password: admin
+      operation: set
+      type: kafka-broker
+      values:
+        auto.create.topics.enable: "false"
+        log.retention.hours: 220
+    no_log: true
+
+# Configuration map can also be a variable
+- hosts: sr1
+  vars:
+    brokerConfig:
+      auto.create.topics.enable: "false"
+      log.retention.hours: 168
+  tasks:
+  - name: Set another kafka-broker configuration
+    ambari_configs:
+      ambari_url: "http://sr1.hdp16:8080"
+      username: admin
+      password: admin
+      operation: set
+      type: kafka-broker
+      values: "{{ brokerConfig }}"
+    no_log: false
+
