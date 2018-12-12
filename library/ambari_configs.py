@@ -57,6 +57,13 @@ options:
     required: false
     default: None
     aliases: []
+  ambari_server:
+    description:
+    - This parameters allow grouping of all Ambari server access related parameters in one dict, this to embed all theses parameters in one variable.
+    - Keys of this dict can be C(ambari_url), C(username), C(password), C(validate_certs), C(ca_bundle_file)
+    required: false
+    default: None
+    aliases: []    
   operation:
     description:
       - C(get) Retrieve current configuration values for type 
@@ -358,13 +365,27 @@ GET="get"
 SET="set"
 LIST="list"
 
+
+def param2(token, moduleParams, ambariServer, default, required):
+    if token in moduleParams and moduleParams[token] != None:
+        return moduleParams[token]
+    elif ambariServer != None and token in ambariServer and ambariServer[token] != None:
+        return ambariServer[token]
+    elif default != None:
+        return default
+    elif required:
+        error("Missing required attribute: '{}'".format(token))
+    else:
+        return None
+
 def main():
     global module
     module = AnsibleModule(
         argument_spec = dict(
-            ambari_url = dict(type='str', required=True),
-            username = dict(required=True, type='str'),
-            password = dict(required=True, type='str'),
+            ambari_server = dict(type='raw', required=False),
+            ambari_url = dict(type='str', required=False),
+            username = dict(required=False, type='str'),
+            password = dict(required=False, type='str'),
             validate_certs = dict(required=False, type='bool', default=True),
             ca_bundle_file = dict(required=False, type='str'),
             operation = dict(type='str', required=False, choices=[GET, SET, LIST], default=SET),
@@ -377,12 +398,19 @@ def main():
     )
     if not HAS_REQUESTS:
         error(msg="python-requests package is not installed")    
+
+    ambariServer = module.params["ambari_server"]
+    if ambariServer != None:   
+        if not isinstance(ambariServer, six.string_types):
+            ambariServer = json.dumps(ambariServer)
+        ambariServer = json.loads(ambariServer)
+
     p = Parameters()
-    p.ambariUrl = module.params['ambari_url']
-    p.username = module.params['username']
-    p.password = module.params['password']
-    p.validateCerts = module.params['validate_certs']
-    p.ca_bundleFile = module.params['ca_bundle_file']
+    p.ambariUrl = param2('ambari_url', module.params, ambariServer, None, True)
+    p.username = param2('username', module.params, ambariServer, None, True)
+    p.password = param2('password', module.params, ambariServer, None, True)
+    p.validateCerts = param2('validate_certs', module.params, ambariServer, True, True)
+    p.ca_bundleFile = param2('ca_bundle_file', module.params, ambariServer, None, False)
     p.operation = module.params["operation"]
     p.type = module.params["type"]
     p.values = module.params["values"]

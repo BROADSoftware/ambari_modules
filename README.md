@@ -18,7 +18,6 @@ These modules need the python-requests package to be present on the remote node.
       roles:
       - ambari_modules
       tasks:
-  
       - name: Set kafka-broker configuration
         ambari_configs:
           ambari_url: "http://sr1.hdp16:8080"
@@ -37,6 +36,61 @@ These modules need the python-requests package to be present on the remote node.
           password: admin
           service: "_stale_"     # '_stale_' is a special token
           state: restarted
+
+## `ambari_server` parameter
+
+If you look at the example above, you will see the first three parameters of each task are always the same. They define how the module acces to Ambari, not what ot does. 
+In a larger playbook, this may be cumbersome.
+
+To improve this, theses module accept a parameter `ambari_server` which must be a map hosting one or several of the following keys:
+
+ - `ambari_url`
+ - `username`
+ - `password`
+ - `validate_certs`
+ - `ca_bundle_file`
+
+For example, the first task of the above example could be written:
+
+      - name: Set kafka-broker configuration
+        ambari_configs:
+          ambari_server
+            ambari_url: "http://sr1.hdp16:8080"
+            username: admin
+            password: admin
+          operation: set
+          type: kafka-broker
+          values:
+            auto.create.topics.enable: "false"
+            log.retention.hours: 220
+            
+Not a very effective improvment! But one can now rewrite the full sample this way:
+
+    - hosts: sr1
+      vars:
+        ambariServer:
+          ambari_url: "http://sr1.hdp16:8080"
+          username: admin
+          password: admin
+      roles:
+      - ambari_modules
+      tasks:
+      - name: Set kafka-broker configuration
+        ambari_configs:
+          ambari_server: "{{ambariServer}}"
+          operation: set
+          type: kafka-broker
+          values:
+            auto.create.topics.enable: "false"
+            log.retention.hours: 220
+    
+      - name: Restart stale services
+        ambari_service:
+          ambari_server: "{{ambariServer}}"
+          service: "_stale_"
+          state: restarted
+
+Obviously, if you have a playbook with a lot of Ambari action, this will improve readability.
           
 # License
 
