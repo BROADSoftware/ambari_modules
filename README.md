@@ -64,7 +64,7 @@ For example, the first task of the above example could be written:
             auto.create.topics.enable: "false"
             log.retention.hours: 220
             
-Not a very effective improvment! But one can now rewrite the full sample this way:
+Not a very effective improvment! But we can now rewrite the full sample this way:
 
     - hosts: sr1
       vars:

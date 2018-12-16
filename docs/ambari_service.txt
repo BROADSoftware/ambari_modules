@@ -4,6 +4,12 @@
 
 OPTIONS (= is mandatory):
 
+- ambari_server
+        This parameters allow grouping of all Ambari server access related parameters in one dict, this to embed all theses
+        parameters in one variable.
+        Keys of this dict can be `ambari_url', `username', `password', `validate_certs', `ca_bundle_file'
+        [Default: None]
+
 = ambari_url
         The Ambari base URL to access Ambari API. Same host:port as the Ambari Admin GUI. Typically
         http://myambari.server.com:8080 or https://myambari.server.com:xxxx

@@ -1,0 +1,151 @@
+> AMBARI_URI    
+
+        This module will usefully replace Ansible uri module for most if not all of Ambari API call. It will handle
+        authentication, automatic cluster id setting and is able to wait completion for a deferred task.
+
+OPTIONS (= is mandatory):
+
+- ambari_server
+        This parameters allow grouping of all Ambari server access related parameters in one dict, this to embed all theses
+        parameters in one variable.
+        Keys of this dict can be `ambari_url', `username', `password', `validate_certs', `ca_bundle_file'
+        [Default: None]
+
+= ambari_url
+        The Ambari base URL to access Ambari API. Same host:port as the Ambari Admin GUI. Typically
+        http://myambari.server.com:8080 or https://myambari.server.com:xxxx
+        [Default: None]
+
+- ca_bundle_file
+        Useful if Ambari connection is using SSL. Allow to specify a CA_BUNDLE file, a file that contains root and intermediate
+        certificates to validate the Ambari certificate.
+        In its simplest case, it could be a file containing the server certificate in .pem format.
+        This file will be looked up on the remote system, on which this module will be executed.
+        [Default: None]
+
+- method
+        HTTP Method
+        (Choices: GET, PUT, POST)[Default: None]
+
+= password
+        The password associated with the username
+        [Default: None]
+
+= path
+        The path of the command to issue. Typically starts with '/api/v1/.....
+        [Default: None]
+
+- payload
+        The request payload, as a JSON string or as a YAML definition
+        [Default: None]
+        alias: 
+
+= username
+        The user name to log on Ambari.
+        [Default: None]
+
+- validate_certs
+        Useful if Ambari connection is using SSL. If no, SSL certificates will not be validated. This should only be used on
+        personally controlled sites using self-signed certificates.
+        [Default: True]
+
+- wait
+        Should the module wait for the operation to be completed in case of asynchronous requests
+        [Default: True]
+        type: bool
+
+
+AUTHOR: Serge ALEXANDRE
+
+EXAMPLES:
+- hosts: sr1
+  vars:
+    ambari_server:
+      ambari_url: "http://sr1.hdp16:8080"
+      username: admin
+      password: admin
+  roles:
+  - ambari_modules
+  tasks:
+  - name: Stop KAFKA
+    ambari_uri:
+      ambari_server: "{{ambari_server}}"
+      method: "PUT"
+      path: api/v1/clusters/$CLUSTER$/services/KAFKA
+      payload: | 
+        {
+            "RequestInfo": {
+                "context" :"ambari_uri: Stop KAFKA"
+            }, 
+            "Body": {
+                "ServiceInfo": {"state": "INSTALLED"}
+            }
+        }
+    register: ret
+    changed_when: ret.http_status is defined and ret.http_status != 200
+    no_log: true
+
+  # The payload can also be expressed as a YAML block:
+  - name: Start KAFKA
+    ambari_uri:
+      ambari_server: "{{ambari_server}}"
+      method: "PUT"
+      path: api/v1/clusters/$CLUSTER$/services/KAFKA
+      payload:
+        RequestInfo: 
+          context: "ambari_uri: Start KAFKA"
+        Body:
+          ServiceInfo:
+            state: STARTED
+    register: ret
+    changed_when: ret.http_status is defined and ret.http_status != 200
+    no_log: true
+
+RETURN VALUES:
+
+
+content:
+  description: 
+  returned: When a content is returned
+  type: object
+  sample: {
+        "changed": false,
+        "content": {
+            "href": "http://sr1.hdp16:8080/api/v1/clusters/hdp16/services",
+            "items": [
+                {
+                    "ServiceInfo": {
+                        "cluster_name": "hdp16",
+                        "service_name": "AMBARI_INFRA"
+                    },
+                    "href": "http://sr1.hdp16:8080/api/v1/clusters/hdp16/services/AMBARI_INFRA"
+                },
+                ...
+                ...
+                {
+                    "ServiceInfo": {
+                        "cluster_name": "hdp16",
+                        "service_name": "ZOOKEEPER"
+                    },
+                    "href": "http://sr1.hdp16:8080/api/v1/clusters/hdp16/services/ZOOKEEPER"
+                }
+            ]
+        },
+        "failed": false,
+        "http_status": 200,
+        "logs": [],
+    }
+
+http_status:
+  description: HTTP status code 
+  returned: Always
+  type: integer
+  sample: 200
+
+content2:
+  description: 
+  returned: Content of the last status request in case of defered command.
+  type: object
+  sample: {}
+
+

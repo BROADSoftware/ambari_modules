@@ -57,6 +57,13 @@ options:
     required: false
     default: None
     aliases: []
+  ambari_server:
+    description:
+    - This parameters allow grouping of all Ambari server access related parameters in one dict, this to embed all theses parameters in one variable.
+    - Keys of this dict can be C(ambari_url), C(username), C(password), C(validate_certs), C(ca_bundle_file)
+    required: false
+    default: None
+    aliases: []    
   service:
     description:
     - The service we want to act on. such as 'HDFS', 'KAFKA_BROKER',...
@@ -177,7 +184,6 @@ EXAMPLES = '''
     no_log: true
 '''
 
-import json 
 import pprint
 import ansible.module_utils.six as six
 import warnings
