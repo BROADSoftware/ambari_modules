@@ -142,6 +142,8 @@ content2:
 
 EXAMPLES = '''
 
+# NB: These example are for illustration. We better directly use ambari_service module to perform such task.
+
 - hosts: sr1
   vars:
     ambari_server:

@@ -6,6 +6,8 @@ This ansible role host a set of modules aimed to ease some operation on Ambari.
 
 * ambari\_service:  Allow to stop/start/restart services managed by Ambari. Doc [at this location](docs/ambari_service.txt)
 
+* ambari\_uri: Usefully replace Ansible uri module for most if not all of Ambari API call. It will handle authentication, automatic cluster id setting and is able to wait completion for a deferred task.[at this location](docs/ambari_uri.txt)
+
 ## Requirements
 
 These modules need the python-requests package to be present on the remote node.
