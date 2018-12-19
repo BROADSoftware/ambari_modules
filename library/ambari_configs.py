@@ -386,7 +386,7 @@ def main():
             ambari_url = dict(type='str', required=False),
             username = dict(required=False, type='str'),
             password = dict(required=False, type='str'),
-            validate_certs = dict(required=False, type='bool', default=True),
+            validate_certs = dict(required=False, type='bool'),
             ca_bundle_file = dict(required=False, type='str'),
             operation = dict(type='str', required=False, choices=[GET, SET, LIST], default=SET),
             type = dict(required=False, type='str'),
