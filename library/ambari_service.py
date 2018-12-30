@@ -209,7 +209,7 @@ logLevel = 'None'
 pp = pprint.PrettyPrinter(indent=2)
 
 def log(level, message):
-    logs.append(level + ':' + message)
+    logs.append(level + ':' + str(message))
         
 def debug(message):
     if logLevel == 'debug' or logLevel == "info":

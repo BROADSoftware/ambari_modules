@@ -228,7 +228,7 @@ logLevel = 'None'
 pp = pprint.PrettyPrinter(indent=2)
 
 def log(level, message):
-    logs.append(level + ':' + message)
+    logs.append(level + ':' + str(message))
         
 def debug(message):
     if logLevel == 'debug' or logLevel == "info":
@@ -329,7 +329,7 @@ class AmbariConfigApi:
         #misc.ppprint( result)
         if len(result[ITEMS]) != 1:
             error("Invalid response on getConfig(). More than one items: {}".format(result))
-        return result[ITEMS][0][PROPERTIES], result[ITEMS][0].get(PROPERTIES_ATTRIBUTES, {})
+        return result[ITEMS][0].get(PROPERTIES, {}), result[ITEMS][0].get(PROPERTIES_ATTRIBUTES, {})
     
     def changeConfig(self, configType, newProperties, checkMode):
         properties, attributes = self.getConfig(configType)
@@ -357,7 +357,7 @@ class AmbariConfigApi:
                 }
             }
             if len(attributes.keys()) > 0:
-                newConfig[CLUSTERS][DESIRED_CONFIGS][ATTRIBUTES] = attributes            
+                newConfig[CLUSTERS][DESIRED_CONFIGS][PROPERTIES_ATTRIBUTES] = attributes            
             self.put(CLUSTER_PUT_URL.format(self.cluster), newConfig)
         return changed
     
