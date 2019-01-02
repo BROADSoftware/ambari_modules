@@ -24,13 +24,18 @@ OPTIONS (= is mandatory):
 
 - operation
         `get' Retrieve current configuration values for type
-        `set' Set some configuration values for type
+        `set' Set (or remove) some configuration values for type
         `list' Retrieve all existing configuration types, with version
         (Choices: set, get, list)[Default: set]
 
 = password
         The password associated with the username
         [Default: None]
+
+- removed
+        A list of configuration key which must NOT be present in the configuration
+        [Default: None]
+        type: list
 
 - type
         Configuration type, such as 'kafka-broker', or 'hdfs-site' .

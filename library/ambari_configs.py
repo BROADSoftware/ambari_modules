@@ -67,7 +67,7 @@ options:
   operation:
     description:
       - C(get) Retrieve current configuration values for type 
-      - C(set) Set some configuration values for type
+      - C(set) Set (or remove) some configuration values for type
       - C(list) Retrieve all existing configuration types, with version
     choices:
     - set
@@ -90,7 +90,12 @@ options:
     required: false
     default: None
     aliases: []
-
+  removed:
+    description:
+    - A list of configuration key which must NOT be present in the configuration
+    required: false
+    default: None
+    type: list
 '''
 
 RETURN = '''
@@ -209,6 +214,7 @@ import json
 import pprint
 import ansible.module_utils.six as six
 import warnings
+from sets import Set as MySet
 
 HAS_REQUESTS = False
 
@@ -331,7 +337,7 @@ class AmbariConfigApi:
             error("Invalid response on getConfig(). More than one items: {}".format(result))
         return result[ITEMS][0].get(PROPERTIES, {}), result[ITEMS][0].get(PROPERTIES_ATTRIBUTES, {})
     
-    def changeConfig(self, configType, newProperties, checkMode):
+    def changeConfig(self, configType, newProperties, removed, checkMode):
         properties, attributes = self.getConfig(configType)
         changed = False
         for key in newProperties:
@@ -345,6 +351,13 @@ class AmbariConfigApi:
                     debug("{}/{}/{}=>{}: Value changed".format(configType, key, properties[key], value))
                 properties[key] = value
                 changed = True
+        if not removed == None:
+            toRemove = MySet(removed)   # To optimize lookup
+            keys = properties.keys()
+            for key in keys:
+                if key in toRemove:
+                    changed = True
+                    del properties[key]
         if changed and not checkMode:
             newTag = TAG_PREFIX + str(int(time.time() * 1000000))
             newConfig = {
@@ -391,8 +404,8 @@ def main():
             operation = dict(type='str', required=False, choices=[GET, SET, LIST], default=SET),
             type = dict(required=False, type='str'),
             values = dict(type='raw', required=False),
+            removed = dict(type='list', required=False),
             log_level = dict(type='str', required=False, default="None")
-            
         ),
         supports_check_mode=True
     )
@@ -414,6 +427,7 @@ def main():
     p.operation = module.params["operation"]
     p.type = module.params["type"]
     p.values = module.params["values"]
+    p.removed = module.params["removed"]
     p.logLevel = module.params['log_level']
     p.checkMode = module.check_mode
     
@@ -428,8 +442,8 @@ def main():
     if p.operation != LIST and p.type == None:
         error("'type' is mandatory when operation != 'list'")
     
-    if p.operation == SET and p.values == None:
-        error("'values' is mandatory when operation == 'set'")
+    if p.operation == SET and p.values == None and p.removed == None:
+        error("One of 'values' or 'removed' is mandatory when operation == 'set'")
 
     api = AmbariConfigApi(p.ambariUrl, p.username, p.password, verify)
     if p.operation == LIST:
@@ -442,10 +456,13 @@ def main():
         result = api.getConfig(p.type)
         module.exit_json(changed=False, type=p.type, config=result, logs=logs)
     elif p.operation == SET:
-        if not isinstance(p.values, six.string_types):
-            p.values = json.dumps(p.values)
-        values = json.loads(p.values)
-        changed = api.changeConfig(p.type, values, p.checkMode)
+        if p.values == None: # This is the case we have only 'removed'
+            values = {} 
+        else:
+            if not isinstance(p.values, six.string_types):
+                p.values = json.dumps(p.values)
+                values = json.loads(p.values)
+        changed = api.changeConfig(p.type, values, p.removed, p.checkMode)
         module.exit_json(changed=changed, type=p.type, logs=logs)
     else:
         error("Unimplemented operation '{}'".format(p.operation))
