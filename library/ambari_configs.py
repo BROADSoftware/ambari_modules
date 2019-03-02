@@ -292,7 +292,7 @@ class AmbariConfigApi:
     def get(self, path):
         url = self.endpoint + "/" + path
         resp = requests.get(url, auth = self.auth, verify=self.verify, headers={"X-Requested-By":"ANSIBLE"})
-        debug(url + " -> {}".format(resp.status_code)) 
+        debug("GET " + url + " -> {}".format(resp.status_code)) 
         if resp.status_code == 200:
             result = resp.json()
             return result
@@ -302,7 +302,7 @@ class AmbariConfigApi:
     def getSafe(self, path):
         url = self.endpoint + "/" + path
         resp = requests.get(url, auth = self.auth, verify=self.verify, headers={"X-Requested-By":"ANSIBLE"})
-        debug(url + " -> {}".format(resp.status_code))
+        debug("GET " + url + " -> {}".format(resp.status_code))
         return resp.status_code, resp.text
          
     def put(self, path, body):
@@ -311,7 +311,7 @@ class AmbariConfigApi:
         resp = requests.put(url, auth = self.auth, data=json.dumps(body), verify=self.verify, headers={"X-Requested-By":"ANSIBLE"})
         # Following does not works. Explanation may be using json=body set Content-Type in the header to application/json.
         #resp = requests.put(url, auth = self.auth, json=body, verify=self.verify, headers={"X-Requested-By":"ANSIBLE"})
-        debug(url + " -> ".format(resp.status_code))
+        debug("PUT " + url + " -> ".format(resp.status_code))
         #print(resp.text) 
         #result = resp.json()
         if resp.status_code >= 200 and resp.status_code <= 299:
@@ -461,7 +461,7 @@ def main():
         else:
             if not isinstance(p.values, six.string_types):
                 p.values = json.dumps(p.values)
-                values = json.loads(p.values)
+            values = json.loads(p.values)
         changed = api.changeConfig(p.type, values, p.removed, p.checkMode)
         module.exit_json(changed=changed, type=p.type, logs=logs)
     else:

@@ -278,7 +278,7 @@ class AmbariServiceApi:
             verify=self.verify, 
             headers={"X-Requested-By":"ANSIBLE"}
         )
-        debug(url + " -> {}".format(resp.status_code)) 
+        debug(method + " " + url + " -> {}".format(resp.status_code)) 
         if resp.status_code < 200 or resp.status_code > 299:
             error("Invalid returned http code '{0}' when calling GET on '{1}'. Check ambari-server.log on the ambari node".format(resp.status_code, url))
         else:

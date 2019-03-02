@@ -4,6 +4,8 @@ This ansible role host a set of modules aimed to ease some operation on Ambari.
 
 * ambari\_configs: Allow to read, define and modify configurations for Hadoop (or others) services managed by Ambari. Doc [at this location](docs/ambari_configs.txt)
 
+* ambari\_host\_services:  Allow you to stop/start all services on a specific host. Typical use case is host rolling restart. Doc [at this location](docs/ambari_host_services.txt)
+
 * ambari\_service:  Allow to stop/start/restart services managed by Ambari. Doc [at this location](docs/ambari_service.txt)
 
 * ambari\_uri: Usefully replace Ansible uri module for most if not all of Ambari API call. It will handle authentication, automatic cluster id setting and is able to wait completion for a deferred task. Doc [at this location](docs/ambari_uri.txt)
